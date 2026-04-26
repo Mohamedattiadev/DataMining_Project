@@ -1,0 +1,4 @@
+Dataset: Credit Card Fraud Detection
+Source: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
+Shape: 284807 rows x 31 columns
+Fraud rate: 0.1727% (492 fraud / 284315 legitimate)
