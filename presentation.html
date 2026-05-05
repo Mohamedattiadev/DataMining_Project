@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credit Card Fraud Detection — Data Mining Project</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── RESET & BASE ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow-x: hidden; }
+    html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+    body { background: #080c14; }
+
+    :root {
+      --title-size:    clamp(1.8rem, 5vw, 4.2rem);
+      --h2-size:       clamp(1.3rem, 3.2vw, 2.4rem);
+      --h3-size:       clamp(1rem, 2.2vw, 1.6rem);
+      --body-size:     clamp(0.78rem, 1.4vw, 1.05rem);
+      --small-size:    clamp(0.65rem, 1vw, 0.85rem);
+      --slide-padding: clamp(2rem, 5vw, 5rem);
+      --content-gap:   clamp(0.6rem, 2vw, 2rem);
+      --element-gap:   clamp(0.3rem, 1vw, 1rem);
+
+      --bg:         #09070f;
+      --bg2:        #0e0b1a;
+      --surface:    #140f22;
+      --surface2:   #1c1535;
+      --border:     rgba(192,132,252,0.18);
+      --accent:     #c084fc;
+      --accent2:    #818cf8;
+      --accent3:    #f472b6;
+      --accent4:    #7c3aed;
+      --text:       #f1f5f9;
+      --text-muted: #94a3b8;
+      --success:    #22c55e;
+      --warning:    #f59e0b;
+      --danger:     #ef4444;
+      --font-display: 'Archivo Black', sans-serif;
+      --font-body:    'Space Grotesk', sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+    }
+
+    /* ── KEYFRAMES ── */
+    @keyframes float-slow {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50%       { transform: translateY(-30px) scale(1.05); }
+    }
+    @keyframes float-x {
+      0%, 100% { transform: translateX(0); }
+      50%       { transform: translateX(20px); }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(192,132,252,0.2); }
+      50%       { box-shadow: 0 0 40px rgba(192,132,252,0.5), 0 0 80px rgba(192,132,252,0.15); }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -200% center; }
+      100% { background-position:  200% center; }
+    }
+    @keyframes border-spin {
+      to { --angle: 360deg; }
+    }
+    @keyframes count-up {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: none; }
+    }
+    @keyframes type-cursor {
+      0%, 100% { opacity: 1; } 50% { opacity: 0; }
+    }
+    @keyframes slide-in-up {
+      from { opacity: 0; transform: translateY(40px); }
+      to   { opacity: 1; transform: none; }
+    }
+    @keyframes gradient-shift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes orbit {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes scanline {
+      0%   { transform: translateY(-100%); }
+      100% { transform: translateY(100vh); }
+    }
+    @keyframes dot-ping {
+      0%   { transform: scale(1); opacity: 1; }
+      75%, 100% { transform: scale(2.5); opacity: 0; }
+    }
+
+    /* ── SLIDE BASE ── */
+    .slide {
+      width: 100vw; height: 100vh; height: 100dvh;
+      overflow: hidden; scroll-snap-align: start;
+      display: flex; flex-direction: column;
+      position: relative;
+    }
+    .slide-content {
+      flex: 1; display: flex; flex-direction: column;
+      justify-content: center; max-height: 100%;
+      overflow: hidden; padding: var(--slide-padding);
+      position: relative; z-index: 1;
+    }
+
+    /* ── BG DECORATIONS ── */
+    .bg-glow {
+      position: absolute; border-radius: 50%;
+      filter: blur(80px); pointer-events: none; z-index: 0;
+    }
+    .bg-glow.animate { animation: float-slow 8s ease-in-out infinite; }
+    .bg-glow.animate-x { animation: float-x 10s ease-in-out infinite; }
+
+    /* subtle grid bg */
+    .slide::before {
+      content: '';
+      position: absolute; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(192,132,252,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(192,132,252,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    /* ── TYPOGRAPHY ── */
+    h1 { font-family: var(--font-display); font-size: var(--title-size); color: var(--text); line-height: 1.1; }
+    h2 { font-family: var(--font-display); font-size: var(--h2-size); color: var(--text); line-height: 1.15; margin-bottom: var(--element-gap); }
+    h3 { font-family: var(--font-body); font-size: var(--h3-size); font-weight: 600; color: var(--accent); line-height: 1.2; }
+    p, li { font-family: var(--font-body); font-size: var(--body-size); color: var(--text-muted); line-height: 1.6; }
+    strong { color: var(--text); font-weight: 600; }
+    code { font-family: var(--font-mono); font-size: 0.9em; background: rgba(192,132,252,0.1); color: var(--accent); padding: 0.1em 0.4em; border-radius: 4px; }
+
+    /* ── ACCENT BAR ── */
+    .accent-bar {
+      width: 60px; height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px; margin-bottom: var(--element-gap);
+    }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 0.3em;
+      font-family: var(--font-body); font-size: var(--small-size);
+      font-weight: 600; padding: 0.25em 0.75em;
+      border-radius: 99px; letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .badge-teal   { background: rgba(192,132,252,0.12); color: var(--accent); border: 1px solid rgba(192,132,252,0.3); }
+    .badge-blue   { background: rgba(14,165,233,0.12); color: var(--accent2); border: 1px solid rgba(14,165,233,0.3); }
+    .badge-orange { background: rgba(249,115,22,0.12); color: var(--accent3); border: 1px solid rgba(249,115,22,0.3); }
+    .badge-green  { background: rgba(34,197,94,0.12); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+    .badge-purple { background: rgba(168,85,247,0.12); color: var(--accent4); border: 1px solid rgba(168,85,247,0.3); }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: clamp(0.8rem, 2vw, 1.5rem);
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .card:hover { border-color: rgba(192,132,252,0.35); transform: translateY(-2px); }
+    .card-accent-top    { border-top: 3px solid var(--accent); }
+    .card-accent-blue   { border-top: 3px solid var(--accent2); }
+    .card-accent-orange { border-top: 3px solid var(--accent3); }
+    .card-accent-purple { border-top: 3px solid var(--accent4); }
+
+    .card-glow {
+      animation: pulse-glow 3s ease-in-out infinite;
+      border-color: rgba(192,132,252,0.4);
+    }
+
+    /* ── GRIDS ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(0.5rem,1.5vw,1.2rem); }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: clamp(0.5rem,1.5vw,1rem); }
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: clamp(0.4rem,1.2vw,1rem); }
+
+    /* ── IMAGES ── */
+    .fig {
+      max-width: 100%; max-height: min(46vh, 400px);
+      object-fit: contain; border-radius: 8px;
+      display: block; margin: 0 auto;
+    }
+
+    /* ── STAT BLOCKS ── */
+    .stat-block { text-align: center; padding: clamp(0.6rem,1.5vw,1.2rem); }
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 4vw, 3rem);
+      color: var(--accent); line-height: 1; display: block;
+    }
+    .stat-label {
+      font-family: var(--font-body); font-size: var(--small-size);
+      color: var(--text-muted); margin-top: 0.3em; display: block;
+    }
+
+    /* ── BULLET LIST ── */
+    .bullet-list { list-style: none; display: flex; flex-direction: column; gap: clamp(0.35rem,0.8vh,0.7rem); }
+    .bullet-list li {
+      display: flex; align-items: flex-start; gap: 0.6em;
+      font-family: var(--font-body); font-size: var(--body-size); color: var(--text-muted);
+    }
+    .bullet-list li::before {
+      content: '';
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); flex-shrink: 0;
+      margin-top: 0.45em;
+    }
+
+    /* ── RESULTS TABLE ── */
+    .results-table { width: 100%; border-collapse: collapse; font-family: var(--font-body); font-size: var(--body-size); }
+    .results-table th {
+      background: var(--surface2); color: var(--accent); font-weight: 600;
+      padding: 0.55em 0.8em; text-align: center; border-bottom: 2px solid var(--border);
+      font-size: var(--small-size); text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .results-table td {
+      padding: 0.5em 0.8em; text-align: center; color: var(--text-muted);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .results-table tr.winner td { background: rgba(192,132,252,0.06); color: var(--text); }
+    .results-table tr.winner td:first-child { color: var(--accent); font-weight: 700; }
+    .results-table .best { color: var(--accent); font-weight: 700; }
+    .results-table tr:hover td { background: rgba(255,255,255,0.03); }
+
+    /* ── PROGRESS BAR ── */
+    .progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent4));
+      background-size: 200% auto;
+      animation: gradient-shift 3s linear infinite;
+      transition: width 0.4s ease; z-index: 100;
+    }
+
+    /* ── NAV DOTS ── */
+    .nav-dots {
+      position: fixed; right: 1.5rem; top: 50%; transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: 0.5rem; z-index: 100;
+    }
+    .dot-wrap { position: relative; display: flex; align-items: center; justify-content: flex-end; }
+    .dot-label {
+      position: absolute; right: 18px;
+      font-family: var(--font-body); font-size: 0.65rem;
+      color: var(--text); background: var(--surface2);
+      padding: 0.2em 0.5em; border-radius: 4px;
+      border: 1px solid var(--border); white-space: nowrap;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s; transform: translateX(4px);
+    }
+    .dot-wrap:hover .dot-label { opacity: 1; }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+      cursor: pointer; transition: all 0.3s ease; flex-shrink: 0;
+    }
+    .dot.active { background: var(--accent); transform: scale(1.35); }
+    .dot.active::after {
+      content: '';
+      position: absolute; width: 8px; height: 8px;
+      border-radius: 50%; background: var(--accent);
+      animation: dot-ping 1.2s ease-in-out infinite;
+    }
+
+    /* ── SLIDE NUMBER ── */
+    .slide-num {
+      position: absolute; bottom: 1.5rem; right: var(--slide-padding);
+      font-family: var(--font-mono); font-size: var(--small-size);
+      color: rgba(255,255,255,0.18); z-index: 10;
+    }
+
+    /* ── SVG ICONS ── */
+    .icon-svg {
+      display: inline-block; width: 1em; height: 1em;
+      vertical-align: middle; stroke: currentColor;
+      fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .icon-lg { width: 2em; height: 2em; }
+    .icon-xl { width: 2.5em; height: 2.5em; }
+
+    /* ── ANIMATIONS ── */
+    [data-animate] {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
+    }
+    [data-animate="left"]  { transform: translateX(-32px); }
+    [data-animate="right"] { transform: translateX(32px); }
+    [data-animate="scale"] { transform: scale(0.85); }
+    [data-animate="blur"]  { opacity: 0; filter: blur(8px); transform: none; }
+    [data-animate].visible { opacity: 1; transform: none; filter: none; }
+
+    .stagger > *:nth-child(1) { transition-delay: 0.04s; }
+    .stagger > *:nth-child(2) { transition-delay: 0.12s; }
+    .stagger > *:nth-child(3) { transition-delay: 0.2s; }
+    .stagger > *:nth-child(4) { transition-delay: 0.28s; }
+    .stagger > *:nth-child(5) { transition-delay: 0.36s; }
+    .stagger > *:nth-child(6) { transition-delay: 0.44s; }
+    .stagger > *:nth-child(7) { transition-delay: 0.52s; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-height: 700px) {
+      :root { --slide-padding: clamp(1rem,3vw,2.5rem); --content-gap: clamp(0.4rem,1.2vw,1rem); --title-size: clamp(1.4rem,4.5vw,2.8rem); --h2-size: clamp(1.1rem,3vw,2rem); }
+    }
+    @media (max-height: 600px) {
+      :root { --slide-padding: clamp(0.6rem,2vw,1.5rem); --title-size: clamp(1.2rem,4vw,2rem); --body-size: clamp(0.68rem,1.1vw,0.9rem); }
+      .nav-dots, .keyboard-hint { display: none; }
+    }
+    @media (max-width: 600px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr !important; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+      html { scroll-behavior: auto; }
+    }
+
+    /* ══════════════════════════════
+       SLIDE-SPECIFIC STYLES
+    ══════════════════════════════ */
+
+    /* S1 TITLE */
+    #s1 { background: var(--bg); }
+    #s1 .bg-glow-1 { width:600px;height:600px;background:rgba(192,132,252,0.07);top:-200px;right:-150px;animation:float-slow 10s ease-in-out infinite; }
+    #s1 .bg-glow-2 { width:500px;height:500px;background:rgba(124,58,237,0.07);bottom:-150px;left:-150px;animation:float-slow 12s ease-in-out infinite reverse; }
+    #s1 .title-eyebrow { font-family:var(--font-mono);font-size:var(--small-size);color:var(--accent);letter-spacing:0.2em;text-transform:uppercase;font-weight:600;margin-bottom:1rem; }
+    #s1 h1 { max-width:14ch;margin-bottom:clamp(0.8rem,2vw,1.5rem); }
+    #s1 h1 span { background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent; }
+    #s1 .subtitle { font-family:var(--font-body);font-size:var(--h3-size);color:var(--text-muted);max-width:50ch;margin-bottom:clamp(1rem,3vh,2rem); }
+    #s1 .divider { width:100%;height:1px;background:linear-gradient(90deg,var(--accent),transparent);margin-bottom:clamp(1rem,3vh,2rem); }
+    #s1 .meta { display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem; }
+    #s1 .title-cursor::after { content:'|';color:var(--accent);animation:type-cursor 0.9s step-end infinite; }
+
+    /* S2 TABLE OF CONTENTS */
+    #s2 { background: var(--bg2); }
+    #s2 .bg-glow-1 { width:400px;height:400px;background:rgba(168,85,247,0.06);top:-100px;right:-80px;animation:float-slow 9s ease-in-out infinite; }
+    #s2 .toc-grid { display:grid;grid-template-columns:1fr 1fr;gap:clamp(0.4rem,1vw,0.8rem);margin-top:var(--content-gap); }
+    #s2 .toc-item {
+      display:flex;align-items:center;gap:0.8em;
+      padding:clamp(0.5rem,1.2vw,0.9rem) clamp(0.7rem,1.5vw,1.2rem);
+      background:var(--surface);border:1px solid var(--border);border-radius:10px;
+      cursor:pointer;transition:all 0.25s ease;text-decoration:none;
+    }
+    #s2 .toc-item:hover { background:var(--surface2);border-color:rgba(192,132,252,0.4);transform:translateX(4px); }
+    #s2 .toc-num { font-family:var(--font-mono);font-size:var(--small-size);color:var(--accent);width:2em;flex-shrink:0;font-weight:600; }
+    #s2 .toc-title { font-family:var(--font-body);font-size:var(--body-size);color:var(--text);font-weight:500; }
+    #s2 .toc-icon { margin-left:auto;opacity:0.3;transition:opacity 0.2s; }
+    #s2 .toc-item:hover .toc-icon { opacity:1; }
+
+    /* S3 THE CHALLENGE */
+    #s3 { background: var(--bg); }
+    #s3 .bg-glow-1 { width:450px;height:450px;background:rgba(239,68,68,0.05);top:-100px;right:-80px;animation:float-slow 11s ease-in-out infinite; }
+    #s3 .problem-grid { display:grid;grid-template-columns:1fr 1fr;gap:clamp(0.6rem,2vw,1.5rem);margin-top:var(--content-gap); }
+    #s3 .big-num { font-family:var(--font-display);font-size:clamp(2.5rem,7vw,5.5rem);line-height:1;display:block; }
+    #s3 .red { color:var(--danger); }
+    #s3 .orange { color:var(--accent3); }
+
+    /* S4 DATASET */
+    #s4 { background: var(--bg2); }
+    #s4 .bg-glow-1 { width:400px;height:400px;background:rgba(129,140,248,0.07);bottom:-100px;right:-100px;animation:float-slow 13s ease-in-out infinite; }
+    #s4 .stats-row { display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(0.4rem,1.2vw,1rem);margin:var(--element-gap) 0; }
+    #s4 .dataset-layout { display:grid;grid-template-columns:1fr 1fr;gap:clamp(0.6rem,2vw,1.5rem);align-items:center; }
+
+    /* S5 EDA */
+    #s5 { background: var(--bg); }
+    #s5 .bg-glow-1 { width:350px;height:350px;background:rgba(168,85,247,0.05);bottom:-80px;left:-80px;animation:float-slow 9s ease-in-out infinite; }
+    #s5 .eda-layout { display:grid;grid-template-columns:1fr 1fr;gap:clamp(0.6rem,2vw,1.5rem);align-items:start;margin-top:var(--content-gap); }
+    #s5 .insight-row { display:flex;align-items:flex-start;gap:0.7em;padding:0.6em 0.8em;background:var(--surface);border-radius:8px;border:1px solid var(--border);margin-bottom:0.5em; }
+    #s5 .insight-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:0.35em; }
+
+    /* S6 METHODOLOGY */
+    #s6 { background: var(--bg2); }
+    #s6 .pipeline { display:flex;align-items:center;gap:clamp(0.3rem,1.2vw,1rem);margin:var(--content-gap) 0;flex-wrap:wrap; }
+    #s6 .pipe-step {
+      flex:1;min-width:90px;background:var(--surface);
+      border:1px solid var(--border);border-radius:10px;
+      padding:clamp(0.6rem,1.5vw,1.2rem);text-align:center;
+      transition:border-color 0.3s, transform 0.3s;
+    }
+    #s6 .pipe-step:hover { border-color:rgba(192,132,252,0.4);transform:translateY(-3px); }
+    #s6 .pipe-icon { display:flex;justify-content:center;align-items:center;margin-bottom:0.4em;color:var(--accent);font-size:clamp(1.2rem,2.5vw,1.8rem); }
+    #s6 .pipe-arrow { color:var(--accent);font-size:clamp(1rem,2vw,1.5rem);flex-shrink:0;opacity:0.6; }
+    #s6 .model-cards { display:grid;grid-template-columns:1fr 1fr 1fr;gap:clamp(0.4rem,1.2vw,1rem); }
+
+    /* S7 SMOTE */
+    #s7 { background: var(--bg); }
+    #s7 .smote-layout { display:grid;grid-template-columns:1fr 1fr;gap:clamp(0.8rem,2.5vw,2rem);align-items:center; }
+    #s7 .bar-row { display:flex;align-items:center;gap:0.7em; }
+    #s7 .bar-label { font-family:var(--font-body);font-size:var(--small-size);color:var(--text-muted);width:80px;flex-shrink:0; }
+    #s7 .bar-track { flex:1;height:18px;background:var(--surface2);border-radius:99px;overflow:hidden; }
+    #s7 .bar-fill { height:100%;border-radius:99px;transition:width 1.2s cubic-bezier(0.16,1,0.3,1) 0.4s; }
+    #s7 .bar-val { font-family:var(--font-mono);font-size:var(--small-size);color:var(--text-muted);width:65px;text-align:right;flex-shrink:0; }
+
+    /* S8 RESULTS TABLE */
+    #s8 { background: var(--bg2); }
+    #s8 .table-wrap { overflow:hidden;border-radius:12px;border:1px solid var(--border);margin-top:var(--element-gap); }
+
+    /* S9 ROC CURVES */
+    #s9 { background: var(--bg); }
+    #s9 .roc-layout { display:grid;grid-template-columns:1fr 1fr;gap:clamp(0.6rem,2vw,1.5rem);align-items:center; }
+    #s9 .auc-row {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0.6em 0.9em;background:var(--surface);border-radius:8px;border:1px solid var(--border);
+      transition:border-color 0.3s;margin-bottom:0.5em;
+    }
+    #s9 .auc-row:hover { border-color:rgba(192,132,252,0.3); }
+    #s9 .auc-name { font-family:var(--font-body);font-size:var(--body-size);color:var(--text-muted);display:flex;align-items:center;gap:0.5em; }
+    #s9 .auc-val { font-family:var(--font-display);font-size:var(--h3-size); }
+
+    /* S10 CONFUSION MATRICES */
+    #s10 { background: var(--bg2); }
+
+    /* S11 FEATURE IMPORTANCE */
+    #s11 { background: var(--bg); }
+    #s11 .feat-layout { display:grid;grid-template-columns:1fr 1fr;gap:clamp(0.6rem,2vw,1.5rem);align-items:center; }
+    #s11 .feat-row { display:flex;align-items:center;gap:0.6em;margin-bottom:0.4em; }
+    #s11 .feat-name { font-family:var(--font-mono);font-size:var(--small-size);color:var(--text);width:32px;flex-shrink:0;font-weight:600; }
+    #s11 .feat-track { flex:1;height:14px;background:var(--surface2);border-radius:99px;overflow:hidden; }
+    #s11 .feat-fill { height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1.2s cubic-bezier(0.16,1,0.3,1) 0.3s; }
+    #s11 .feat-pct { font-family:var(--font-mono);font-size:var(--small-size);color:var(--text-muted);width:40px;text-align:right; }
+
+    /* S12 BEST MODEL */
+    #s12 { background: var(--bg2); }
+    #s12 .bg-glow-1 { width:500px;height:500px;background:rgba(192,132,252,0.08);top:-200px;right:-100px;animation:float-slow 10s ease-in-out infinite; }
+    #s12 .win-layout { display:grid;grid-template-columns:1fr 1fr;gap:clamp(0.8rem,2.5vw,2rem);align-items:start;margin-top:var(--content-gap); }
+    #s12 .metric-grid { display:grid;grid-template-columns:1fr 1fr;gap:clamp(0.4rem,1.2vw,1rem); }
+    #s12 .metric-card {
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:10px;padding:clamp(0.6rem,1.5vw,1rem);text-align:center;
+    }
+    #s12 .metric-card .val { font-family:var(--font-display);font-size:clamp(1.4rem,3vw,2.2rem);color:var(--accent);display:block;line-height:1; }
+    #s12 .metric-card .lbl { font-family:var(--font-body);font-size:var(--small-size);color:var(--text-muted);display:block;margin-top:0.2em; }
+    #s12 .cm-row { display:flex;justify-content:space-between;align-items:center;padding:0.55em 0.9em;border-radius:8px;margin-bottom:0.4em; }
+    #s12 .cm-row.tp { background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2); }
+    #s12 .cm-row.fp { background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2); }
+    #s12 .cm-row.fn { background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2); }
+    #s12 .cm-row .label { font-family:var(--font-body);font-size:var(--body-size);color:var(--text-muted); }
+    #s12 .cm-row .count { font-family:var(--font-display);font-size:var(--h3-size); }
+    #s12 .tp .count { color:var(--success); }
+    #s12 .fp .count { color:var(--danger); }
+    #s12 .fn .count { color:var(--accent3); }
+
+    /* S13 LIMITATIONS */
+    #s13 { background: var(--bg); }
+    #s13 .bg-glow-1 { width:450px;height:450px;background:rgba(244,114,182,0.06);top:-120px;left:-80px;animation:float-slow 11s ease-in-out infinite; }
+    #s13 .lim-layout { display:grid;grid-template-columns:1fr 1fr;gap:clamp(0.6rem,2vw,1.5rem);margin-top:var(--content-gap); }
+    #s13 .lim-card { background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:clamp(0.7rem,1.8vw,1.3rem); }
+    #s13 .lim-section-label { font-family:var(--font-mono);font-size:var(--small-size);letter-spacing:0.1em;text-transform:uppercase;font-weight:600;margin-bottom:0.6em; }
+
+    /* S14 CONCLUSIONS */
+    #s14 { background: var(--bg2); }
+    #s14 .bg-glow-1 { width:400px;height:400px;background:rgba(192,132,252,0.06);bottom:-100px;left:-100px;animation:float-slow 10s ease-in-out infinite; }
+    #s14 .conc-grid { display:grid;grid-template-columns:1fr 1fr;gap:clamp(0.5rem,1.5vw,1.2rem);margin-top:var(--element-gap); }
+    #s14 .conc-card { background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:clamp(0.7rem,1.8vw,1.3rem); }
+    #s14 .conc-num { font-family:var(--font-display);font-size:clamp(1.8rem,4vw,3rem);color:rgba(192,132,252,0.15);line-height:1;margin-bottom:0.2em; }
+    #s14 .conc-title { font-family:var(--font-body);font-size:var(--body-size);color:var(--accent);font-weight:600;margin-bottom:0.3em; }
+    #s14 .conc-body { font-family:var(--font-body);font-size:var(--small-size);color:var(--text-muted);line-height:1.5; }
+
+    /* S15 THANK YOU */
+    #s15 { background: var(--bg); justify-content:center;align-items:center;text-align:center; }
+    #s15 .bg-glow-1 { width:700px;height:700px;background:rgba(192,132,252,0.05);top:50%;left:50%;transform:translate(-50%,-50%);animation:float-slow 12s ease-in-out infinite; }
+    #s15 .bg-glow-2 { width:400px;height:400px;background:rgba(168,85,247,0.04);top:50%;left:50%;transform:translate(-50%,-50%);animation:float-slow 8s ease-in-out infinite reverse; }
+    #s15 .ty-big {
+      font-family:var(--font-display);font-size:clamp(3rem,10vw,8rem);
+      background:linear-gradient(135deg,var(--accent),var(--accent2),var(--accent4));
+      background-size:200% auto;
+      -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+      animation:gradient-shift 4s linear infinite;
+      line-height:1;
+    }
+    #s15 .ty-sub { font-family:var(--font-body);font-size:var(--h3-size);color:var(--text-muted);margin-top:0.5em; }
+    #s15 .links { display:flex;gap:0.8rem;flex-wrap:wrap;justify-content:center;margin-top:clamp(1rem,3vh,2rem); }
+
+    /* ── WINNER BADGE ── */
+    .winner-crown {
+      display:inline-flex;align-items:center;gap:0.4em;
+      font-family:var(--font-body);font-size:var(--small-size);font-weight:700;
+      color:var(--accent);background:rgba(192,132,252,0.1);
+      border:1px solid rgba(192,132,252,0.35);border-radius:99px;padding:0.25em 0.8em;
+      animation:pulse-glow 3s ease-in-out infinite;
+    }
+
+    /* ── KEYBOARD HINT ── */
+    .keyboard-hint {
+      position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
+      font-family:var(--font-mono);font-size:0.65rem;color:rgba(255,255,255,0.2);
+      display:flex;gap:0.5em;align-items:center;z-index:100;pointer-events:none;
+    }
+    .key { border:1px solid rgba(255,255,255,0.15);border-radius:3px;padding:0.1em 0.4em; }
+  </style>
+</head>
+<body>
+
+<!-- ── SVG ICON DEFS ── -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="ico-db" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/>
+      <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
+      <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
+    </symbol>
+    <symbol id="ico-funnel" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 3H2l8 9.46V19l4 2V12.46L22 3z"/>
+    </symbol>
+    <symbol id="ico-scales" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3v18M8 21h8"/>
+      <path d="M3 8l9-5 9 5"/>
+      <path d="M2 12l4 6H2l4-6zM18 12l4 6h-4l4-6z"/>
+    </symbol>
+    <symbol id="ico-tree" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="4" r="2"/>
+      <circle cx="5" cy="17" r="2"/>
+      <circle cx="19" cy="17" r="2"/>
+      <path d="M12 6v6M12 12l-5 3.5M12 12l5 3.5"/>
+    </symbol>
+    <symbol id="ico-gauge" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22a10 10 0 110-20 10 10 0 010 20z"/>
+      <path d="M12 6v1M6 12H5M18 12h1M7.75 7.75l.7.7"/>
+      <path d="M12 12l2.5-3.5"/>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+    </symbol>
+    <symbol id="ico-crown" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 17h18l-2.5-9L14 13l-2-7-2 7-4.5-5L3 17z"/>
+      <path d="M3 21h18"/>
+    </symbol>
+    <symbol id="ico-chart" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 3v18h18"/>
+      <path d="M7 16l4-4 4 4 4-6"/>
+    </symbol>
+    <symbol id="ico-arrow-r" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14M13 6l6 6-6 6"/>
+    </symbol>
+    <symbol id="ico-shield" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2l8 3v7c0 5-4 9-8 10C8 21 4 17 4 12V5l8-3z"/>
+      <path d="M9 12l2 2 4-4"/>
+    </symbol>
+    <symbol id="ico-brain" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9.5 2a4.5 4.5 0 014.5 4.5M9.5 2C7 2 5 4 5 6.5c0 1.5.7 2.8 1.8 3.7C5.7 11.2 5 12.5 5 14c0 2.5 2 4.5 4.5 4.5"/>
+      <path d="M14.5 2a4.5 4.5 0 00-4.5 4.5M14.5 2C17 2 19 4 19 6.5c0 1.5-.7 2.8-1.8 3.7 1.1 1 1.8 2.3 1.8 3.8 0 2.5-2 4.5-4.5 4.5"/>
+      <path d="M9.5 18.5V21M14.5 18.5V21M12 7v10"/>
+    </symbol>
+    <symbol id="ico-warning" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </symbol>
+    <symbol id="ico-rocket" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/>
+      <path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/>
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+    </symbol>
+    <symbol id="ico-layers" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+      <polyline points="2 17 12 22 22 17"/>
+      <polyline points="2 12 12 17 22 12"/>
+    </symbol>
+    <symbol id="ico-target" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <circle cx="12" cy="12" r="6"/>
+      <circle cx="12" cy="12" r="2"/>
+    </symbol>
+    <symbol id="ico-sparkle" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="progress-bar" id="progress"></div>
+<nav class="nav-dots" id="navDots"></nav>
+<div class="keyboard-hint">
+  <span class="key">↑</span><span class="key">↓</span>
+  <span style="opacity:0.5">navigate</span>
+  <span style="opacity:0.3;margin-left:0.5em">·</span>
+  <span class="key">Space</span>
+  <span style="opacity:0.5">advance</span>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 01 — TITLE
+══════════════════════════════════════════════ -->
+<section class="slide" id="s1">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+  <div class="slide-content">
+    <p class="title-eyebrow" data-animate="blur">
+      <svg class="icon-svg" style="width:0.9em;height:0.9em;margin-right:0.3em"><use href="#ico-shield"/></svg>
+      Data Mining Project · 2026
+    </p>
+    <h1 data-animate style="transition-delay:0.1s">
+      Credit Card<br><span>Fraud Detection</span>
+    </h1>
+    <div class="divider" data-animate style="transition-delay:0.2s"></div>
+    <p class="subtitle" data-animate style="transition-delay:0.25s">
+      Comparative Study of Ensemble &amp; Linear Classification Methods
+    </p>
+    <div class="meta" data-animate style="transition-delay:0.35s">
+      <span class="badge badge-teal">
+        <svg class="icon-svg" style="width:0.8em;height:0.8em"><use href="#ico-layers"/></svg>
+        Random Forest
+      </span>
+      <span class="badge badge-blue">
+        <svg class="icon-svg" style="width:0.8em;height:0.8em"><use href="#ico-tree"/></svg>
+        XGBoost
+      </span>
+      <span class="badge badge-orange">
+        <svg class="icon-svg" style="width:0.8em;height:0.8em"><use href="#ico-chart"/></svg>
+        Logistic Regression
+      </span>
+      <span class="badge badge-purple">
+        <svg class="icon-svg" style="width:0.8em;height:0.8em"><use href="#ico-scales"/></svg>
+        SMOTE
+      </span>
+    </div>
+    <p style="margin-top:clamp(1rem,3vh,2rem);font-family:var(--font-mono);font-size:var(--small-size);color:var(--text-muted)" data-animate style="transition-delay:0.45s">
+      Mohamed Attia &nbsp;·&nbsp; Kerim Hariri
+    </p>
+  </div>
+  <span class="slide-num">01 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 02 — PROJECT OVERVIEW
+══════════════════════════════════════════════ -->
+<section class="slide" id="s2">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">Project Overview</h2>
+    <p style="font-family:var(--font-body);font-size:var(--body-size);color:var(--text-muted)" data-animate style="transition-delay:0.08s">
+      End-to-end data mining pipeline — 6 phases, 3 algorithms, full reproducibility
+    </p>
+
+    <div class="toc-grid stagger" style="margin-top:var(--content-gap)">
+      <div class="toc-item" data-animate>
+        <span class="toc-num">01</span>
+        <div>
+          <span class="toc-title">Setup &amp; Environment</span>
+          <p style="font-family:var(--font-body);font-size:var(--small-size);color:var(--text-muted);margin-top:0.15em">Python env · Kaggle dataset · Git repo</p>
+        </div>
+      </div>
+      <div class="toc-item" data-animate>
+        <span class="toc-num">02</span>
+        <div>
+          <span class="toc-title">Exploratory Data Analysis</span>
+          <p style="font-family:var(--font-body);font-size:var(--small-size);color:var(--text-muted);margin-top:0.15em">Distributions · correlations · class imbalance</p>
+        </div>
+      </div>
+      <div class="toc-item" data-animate>
+        <span class="toc-num">03</span>
+        <div>
+          <span class="toc-title">Preprocessing</span>
+          <p style="font-family:var(--font-body);font-size:var(--small-size);color:var(--text-muted);margin-top:0.15em">Dedup · scaling · stratified split · SMOTE</p>
+        </div>
+      </div>
+      <div class="toc-item" data-animate>
+        <span class="toc-num">04</span>
+        <div>
+          <span class="toc-title">Model Training</span>
+          <p style="font-family:var(--font-body);font-size:var(--small-size);color:var(--text-muted);margin-top:0.15em">Logistic Regression · Random Forest · XGBoost</p>
+        </div>
+      </div>
+      <div class="toc-item" data-animate>
+        <span class="toc-num">05</span>
+        <div>
+          <span class="toc-title">Evaluation &amp; Comparison</span>
+          <p style="font-family:var(--font-body);font-size:var(--small-size);color:var(--text-muted);margin-top:0.15em">5 metrics · ROC · confusion matrices · features</p>
+        </div>
+      </div>
+      <div class="toc-item" data-animate>
+        <span class="toc-num">06</span>
+        <div>
+          <span class="toc-title">Paper &amp; Submission</span>
+          <p style="font-family:var(--font-body);font-size:var(--small-size);color:var(--text-muted);margin-top:0.15em">5-page IEEE paper · LaTeX · full package</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:var(--content-gap);display:flex;gap:0.6rem;flex-wrap:wrap" data-animate style="transition-delay:0.55s">
+      <span class="badge badge-purple">
+        <svg class="icon-svg" style="width:0.8em;height:0.8em"><use href="#ico-chart"/></svg>
+        Logistic Regression — baseline
+      </span>
+      <span class="badge badge-teal">
+        <svg class="icon-svg" style="width:0.8em;height:0.8em"><use href="#ico-layers"/></svg>
+        Random Forest — 200 trees
+      </span>
+      <span class="badge badge-blue">
+        <svg class="icon-svg" style="width:0.8em;height:0.8em"><use href="#ico-tree"/></svg>
+        XGBoost — 300 rounds
+      </span>
+    </div>
+  </div>
+  <span class="slide-num">02 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 03 — THE CHALLENGE
+══════════════════════════════════════════════ -->
+<section class="slide" id="s3">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">The Challenge</h2>
+
+    <div class="problem-grid stagger" style="margin-top:var(--content-gap)">
+      <div class="card card-accent-top" data-animate style="border-top-color:var(--danger)">
+        <div style="text-align:center">
+          <span class="big-num red" data-counter="33" data-suffix="B" data-prefix="$">$33B</span>
+          <p style="color:var(--text-muted);font-size:var(--body-size);margin-top:0.3em">Annual global credit card fraud losses</p>
+        </div>
+      </div>
+      <div class="card card-accent-orange" data-animate>
+        <div style="text-align:center">
+          <span class="big-num orange">0.173%</span>
+          <p style="color:var(--text-muted);font-size:var(--body-size);margin-top:0.3em">Fraud rate — 1 in every 578 transactions</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:var(--content-gap)" data-animate style="transition-delay:0.3s">
+      <p style="color:var(--accent);font-weight:600;font-size:var(--body-size);margin-bottom:0.6em;display:flex;align-items:center;gap:0.5em">
+        <svg class="icon-svg" style="width:1em;height:1em"><use href="#ico-warning"/></svg>
+        Why is this hard?
+      </p>
+      <ul class="bullet-list stagger">
+        <li data-animate><strong>Severe class imbalance</strong> — naive "all-legitimate" model scores 99.8% accuracy yet catches zero fraud</li>
+        <li data-animate><strong>Dual cost problem</strong> — false positives freeze customer cards; false negatives miss real fraud</li>
+        <li data-animate><strong>Hidden features</strong> — raw transaction data anonymised via PCA; V1–V28 have no direct business interpretation</li>
+        <li data-animate><strong>Research goal</strong> — can ensemble methods + SMOTE overcome the imbalance problem?</li>
+      </ul>
+    </div>
+  </div>
+  <span class="slide-num">03 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 04 — DATASET OVERVIEW
+══════════════════════════════════════════════ -->
+<section class="slide" id="s4">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">Dataset Overview</h2>
+
+    <div class="stats-row stagger" style="margin-top:var(--element-gap)">
+      <div class="card stat-block" data-animate>
+        <span class="stat-num">284K</span>
+        <span class="stat-label">Total Transactions</span>
+      </div>
+      <div class="card stat-block" data-animate>
+        <span class="stat-num" style="color:var(--danger)">492</span>
+        <span class="stat-label">Fraud Cases</span>
+      </div>
+      <div class="card stat-block" data-animate>
+        <span class="stat-num" style="color:var(--accent2)">30</span>
+        <span class="stat-label">Features</span>
+      </div>
+      <div class="card stat-block" data-animate>
+        <span class="stat-num" style="color:var(--accent3)">1:578</span>
+        <span class="stat-label">Fraud : Legit</span>
+      </div>
+    </div>
+
+    <div class="dataset-layout" style="margin-top:var(--content-gap)">
+      <div data-animate style="transition-delay:0.2s">
+        <img src="results/figures/class_distribution.png" alt="Class Distribution" class="fig">
+      </div>
+      <div data-animate style="transition-delay:0.3s">
+        <p style="color:var(--accent);font-weight:600;font-size:var(--body-size);margin-bottom:0.6em;display:flex;align-items:center;gap:0.5em">
+          <svg class="icon-svg" style="width:1em;height:1em"><use href="#ico-db"/></svg>
+          Source: Kaggle · ULB Machine Learning Group
+        </p>
+        <ul class="bullet-list">
+          <li>European cardholders · September 2013 · 2 days</li>
+          <li><strong>V1–V28</strong>: PCA-transformed for privacy</li>
+          <li><strong>Amount</strong>: transaction value (€0–€25,000)</li>
+          <li><strong>Time</strong>: seconds since first transaction</li>
+          <li>1,081 duplicates removed → <strong>283,726</strong> clean samples</li>
+          <li>Train 80% (SMOTE balanced) · Test 20% (original dist.)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <span class="slide-num">04 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 05 — EXPLORATORY DATA ANALYSIS
+══════════════════════════════════════════════ -->
+<section class="slide" id="s5">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">Exploratory Data Analysis</h2>
+
+    <div class="eda-layout">
+      <div data-animate style="transition-delay:0.15s">
+        <img src="results/figures/amount_time_distributions.png" alt="Amount & Time Distributions" class="fig">
+      </div>
+      <div data-animate style="transition-delay:0.25s">
+        <p style="color:var(--accent);font-weight:600;font-size:var(--body-size);margin-bottom:0.7em;display:flex;align-items:center;gap:0.5em">
+          <svg class="icon-svg" style="width:1em;height:1em"><use href="#ico-sparkle"/></svg>
+          Key EDA Findings
+        </p>
+
+        <div class="insight-row">
+          <span class="insight-dot" style="background:var(--accent)"></span>
+          <div>
+            <p style="font-size:var(--body-size);color:var(--text);font-weight:600">Amount skewed right</p>
+            <p style="font-size:var(--small-size);color:var(--text-muted)">Median €22 — most transactions are small; fraud cases span wider amount range</p>
+          </div>
+        </div>
+
+        <div class="insight-row">
+          <span class="insight-dot" style="background:var(--accent2)"></span>
+          <div>
+            <p style="font-size:var(--body-size);color:var(--text);font-weight:600">Temporal pattern</p>
+            <p style="font-size:var(--small-size);color:var(--text-muted)">Two peaks in legitimate transactions (daytime activity); fraud more uniformly distributed</p>
+          </div>
+        </div>
+
+        <div class="insight-row">
+          <span class="insight-dot" style="background:var(--danger)"></span>
+          <div>
+            <p style="font-size:var(--body-size);color:var(--text);font-weight:600">V14, V10, V12 most discriminative</p>
+            <p style="font-size:var(--small-size);color:var(--text-muted)">Fraud cases show strongly separated distributions on these PCA components</p>
+          </div>
+        </div>
+
+        <div class="insight-row">
+          <span class="insight-dot" style="background:var(--accent3)"></span>
+          <div>
+            <p style="font-size:var(--body-size);color:var(--text);font-weight:600">No missing values</p>
+            <p style="font-size:var(--small-size);color:var(--text-muted)">Clean dataset; only preprocessing needed was deduplication and feature scaling for LR</p>
+          </div>
+        </div>
+
+        <div style="margin-top:var(--element-gap);display:flex;gap:0.6rem;flex-wrap:wrap">
+          <span class="badge badge-teal">No nulls</span>
+          <span class="badge badge-blue">30 features</span>
+          <span class="badge badge-orange">Log-scale Amount</span>
+          <span class="badge badge-purple">StandardScaler</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <span class="slide-num">05 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 06 — METHODOLOGY PIPELINE
+══════════════════════════════════════════════ -->
+<section class="slide" id="s6">
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">Methodology Pipeline</h2>
+
+    <div class="pipeline stagger" style="margin-top:var(--element-gap)">
+      <div class="pipe-step" data-animate>
+        <div class="pipe-icon"><svg class="icon-svg icon-lg"><use href="#ico-db"/></svg></div>
+        <p style="font-size:var(--small-size);color:var(--accent);font-weight:600">Load</p>
+        <p style="font-size:var(--small-size);color:var(--text-muted)">284,807 raw transactions</p>
+      </div>
+      <div class="pipe-arrow" data-animate>
+        <svg class="icon-svg" style="width:1.2em;height:1.2em"><use href="#ico-arrow-r"/></svg>
+      </div>
+      <div class="pipe-step" data-animate>
+        <div class="pipe-icon"><svg class="icon-svg icon-lg"><use href="#ico-funnel"/></svg></div>
+        <p style="font-size:var(--small-size);color:var(--accent);font-weight:600">Clean</p>
+        <p style="font-size:var(--small-size);color:var(--text-muted)">Remove 1,081 duplicates</p>
+      </div>
+      <div class="pipe-arrow" data-animate>
+        <svg class="icon-svg" style="width:1.2em;height:1.2em"><use href="#ico-arrow-r"/></svg>
+      </div>
+      <div class="pipe-step" data-animate>
+        <div class="pipe-icon"><svg class="icon-svg icon-lg"><use href="#ico-scales"/></svg></div>
+        <p style="font-size:var(--small-size);color:var(--accent);font-weight:600">SMOTE</p>
+        <p style="font-size:var(--small-size);color:var(--text-muted)">Balance training set</p>
+      </div>
+      <div class="pipe-arrow" data-animate>
+        <svg class="icon-svg" style="width:1.2em;height:1.2em"><use href="#ico-arrow-r"/></svg>
+      </div>
+      <div class="pipe-step" data-animate>
+        <div class="pipe-icon"><svg class="icon-svg icon-lg"><use href="#ico-brain"/></svg></div>
+        <p style="font-size:var(--small-size);color:var(--accent);font-weight:600">Train</p>
+        <p style="font-size:var(--small-size);color:var(--text-muted)">3 models × cross-val</p>
+      </div>
+      <div class="pipe-arrow" data-animate>
+        <svg class="icon-svg" style="width:1.2em;height:1.2em"><use href="#ico-arrow-r"/></svg>
+      </div>
+      <div class="pipe-step" data-animate>
+        <div class="pipe-icon"><svg class="icon-svg icon-lg"><use href="#ico-gauge"/></svg></div>
+        <p style="font-size:var(--small-size);color:var(--accent);font-weight:600">Evaluate</p>
+        <p style="font-size:var(--small-size);color:var(--text-muted)">F1, AUC, Precision, Recall</p>
+      </div>
+    </div>
+
+    <div class="model-cards stagger" style="margin-top:var(--content-gap)">
+      <div class="card card-accent-orange" data-animate>
+        <p class="badge badge-orange" style="margin-bottom:0.5em">Baseline</p>
+        <h3 style="color:var(--accent3)">Logistic Regression</h3>
+        <ul class="bullet-list" style="margin-top:0.5em">
+          <li>Linear decision boundary</li>
+          <li><code>C=0.01</code> strong regularisation</li>
+          <li>Balanced class weights</li>
+          <li>Interpretable + fast</li>
+        </ul>
+      </div>
+      <div class="card card-accent-blue" data-animate>
+        <p class="badge badge-blue" style="margin-bottom:0.5em">Ensemble</p>
+        <h3 style="color:var(--accent2)">Random Forest</h3>
+        <ul class="bullet-list" style="margin-top:0.5em">
+          <li>200 decision trees vote</li>
+          <li><code>max_depth=20</code></li>
+          <li>Non-linear pattern capture</li>
+          <li>Built-in feature importance</li>
+        </ul>
+      </div>
+      <div class="card card-accent-top" data-animate>
+        <p class="badge badge-teal" style="margin-bottom:0.5em">Boosting</p>
+        <h3>XGBoost</h3>
+        <ul class="bullet-list" style="margin-top:0.5em">
+          <li>300 sequential trees</li>
+          <li><code>learning_rate=0.05</code></li>
+          <li>Each tree fixes prior errors</li>
+          <li>Industry gold standard</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <span class="slide-num">06 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 07 — SMOTE
+══════════════════════════════════════════════ -->
+<section class="slide" id="s7">
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">Handling Class Imbalance · SMOTE</h2>
+
+    <div class="smote-layout" style="margin-top:var(--content-gap)">
+      <div data-animate style="transition-delay:0.15s">
+        <p style="color:var(--text-muted);font-size:var(--body-size);margin-bottom:var(--element-gap)">
+          <strong>Synthetic Minority Over-sampling Technique</strong> creates new fraud examples by interpolating between existing cases in feature space.
+        </p>
+
+        <div class="card" style="margin-bottom:var(--element-gap)">
+          <p style="font-size:var(--small-size);color:var(--danger);font-weight:600;margin-bottom:0.6em;display:flex;align-items:center;gap:0.4em">
+            <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-warning"/></svg>
+            BEFORE SMOTE (training set)
+          </p>
+          <div style="display:flex;flex-direction:column;gap:0.5em">
+            <div class="bar-row">
+              <span class="bar-label">Legit</span>
+              <div class="bar-track"><div class="bar-fill" style="width:99.8%;background:var(--success)"></div></div>
+              <span class="bar-val">226,602</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">Fraud</span>
+              <div class="bar-track"><div class="bar-fill" style="width:0.17%;background:var(--danger)"></div></div>
+              <span class="bar-val">378</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <p style="font-size:var(--small-size);color:var(--accent);font-weight:600;margin-bottom:0.6em;display:flex;align-items:center;gap:0.4em">
+            <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-scales"/></svg>
+            AFTER SMOTE (balanced training set)
+          </p>
+          <div style="display:flex;flex-direction:column;gap:0.5em">
+            <div class="bar-row">
+              <span class="bar-label">Legit</span>
+              <div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--success)"></div></div>
+              <span class="bar-val">226,602</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">Fraud</span>
+              <div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--accent)"></div></div>
+              <span class="bar-val">226,602</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-animate style="transition-delay:0.3s">
+        <ul class="bullet-list" style="margin-bottom:var(--content-gap)">
+          <li>Applied <strong>only to training set</strong> — never test set</li>
+          <li>Prevents data leakage into evaluation</li>
+          <li>Test set keeps original 0.17% fraud distribution</li>
+          <li>Evaluation reflects real-world conditions</li>
+        </ul>
+        <div class="card" style="margin-top:var(--element-gap);text-align:center">
+          <span class="stat-num">453,204</span>
+          <span class="stat-label">Total balanced training samples</span>
+        </div>
+        <div style="margin-top:var(--element-gap);padding:0.8em;background:rgba(192,132,252,0.07);border-radius:8px;border:1px solid rgba(192,132,252,0.2)">
+          <p style="font-size:var(--small-size);color:var(--accent);font-weight:600;display:flex;align-items:center;gap:0.4em">
+            <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-target"/></svg>
+            Result
+          </p>
+          <p style="font-size:var(--small-size);color:var(--text-muted);margin-top:0.3em">All 3 models achieve &gt;75% recall thanks to proper balancing</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <span class="slide-num">07 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 08 — PERFORMANCE COMPARISON
+══════════════════════════════════════════════ -->
+<section class="slide" id="s8">
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">Performance Comparison</h2>
+    <p style="font-size:var(--small-size);color:var(--text-muted)" data-animate style="transition-delay:0.1s">
+      Evaluated on original-distribution test set — 56,746 samples · 95 fraud cases
+    </p>
+
+    <div class="table-wrap" data-animate style="transition-delay:0.2s;margin-top:var(--element-gap)">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Accuracy</th>
+            <th>Precision</th>
+            <th>Recall</th>
+            <th>F1-Score</th>
+            <th>ROC-AUC</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align:left;padding-left:1em;color:var(--accent3)">
+              <svg class="icon-svg" style="width:0.9em;height:0.9em;margin-right:0.3em;vertical-align:middle"><use href="#ico-chart"/></svg>
+              Logistic Regression
+            </td>
+            <td>0.9741</td><td>0.0539</td><td>0.8737</td><td>0.1015</td><td>0.9618</td>
+          </tr>
+          <tr class="winner">
+            <td style="text-align:left;padding-left:1em">
+              <svg class="icon-svg" style="width:0.9em;height:0.9em;margin-right:0.3em;vertical-align:middle"><use href="#ico-crown"/></svg>
+              Random Forest
+            </td>
+            <td class="best">0.9994</td>
+            <td class="best">0.8391</td>
+            <td>0.7684</td>
+            <td class="best">0.8022</td>
+            <td class="best">0.9842</td>
+          </tr>
+          <tr>
+            <td style="text-align:left;padding-left:1em;color:var(--accent2)">
+              <svg class="icon-svg" style="width:0.9em;height:0.9em;margin-right:0.3em;vertical-align:middle"><use href="#ico-tree"/></svg>
+              XGBoost
+            </td>
+            <td>0.9987</td><td>0.5778</td><td class="best">0.8211</td><td>0.6783</td><td>0.9733</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-3 stagger" style="margin-top:var(--content-gap)">
+      <div class="card" data-animate>
+        <p style="font-size:var(--small-size);color:var(--accent);font-weight:600;margin-bottom:0.3em">Why not Accuracy?</p>
+        <p style="font-size:var(--small-size);color:var(--text-muted)">Naïve "all-legit" model = 99.8% accurate, catches zero fraud. Useless.</p>
+      </div>
+      <div class="card" data-animate>
+        <p style="font-size:var(--small-size);color:var(--accent);font-weight:600;margin-bottom:0.3em">Primary Metrics</p>
+        <p style="font-size:var(--small-size);color:var(--text-muted)">F1-Score + ROC-AUC for imbalanced data. Precision/Recall for business interpretation.</p>
+      </div>
+      <div class="card" data-animate>
+        <p style="font-size:var(--small-size);color:var(--accent);font-weight:600;margin-bottom:0.3em">RF F1 Gain</p>
+        <p style="font-size:var(--small-size);color:var(--text-muted)">RF F1 <strong style="color:var(--accent)">0.8022</strong> vs LR <strong style="color:var(--danger)">0.1015</strong> — <strong style="color:var(--warning)">8× improvement</strong>.</p>
+      </div>
+    </div>
+  </div>
+  <span class="slide-num">08 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 09 — ROC CURVES
+══════════════════════════════════════════════ -->
+<section class="slide" id="s9">
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">ROC Curves</h2>
+
+    <div class="roc-layout" style="margin-top:var(--content-gap)">
+      <div data-animate style="transition-delay:0.15s">
+        <img src="results/figures/roc_curves_combined.png" alt="ROC Curves" class="fig">
+      </div>
+      <div data-animate style="transition-delay:0.25s">
+        <p style="font-size:var(--small-size);color:var(--text-muted);margin-bottom:var(--element-gap)">
+          ROC-AUC measures ability to rank a random fraud case higher than a random legitimate one.
+          <br><br><strong>1.0 = perfect discrimination · 0.5 = random guessing</strong>
+        </p>
+        <div>
+          <div class="auc-row">
+            <span class="auc-name">
+              <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-crown"/></svg>
+              Random Forest
+            </span>
+            <span class="auc-val" style="color:var(--accent)">0.9842</span>
+          </div>
+          <div class="auc-row">
+            <span class="auc-name">
+              <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-tree"/></svg>
+              XGBoost
+            </span>
+            <span class="auc-val" style="color:var(--accent2)">0.9733</span>
+          </div>
+          <div class="auc-row">
+            <span class="auc-name">
+              <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-chart"/></svg>
+              Logistic Regression
+            </span>
+            <span class="auc-val" style="color:var(--accent3)">0.9618</span>
+          </div>
+        </div>
+        <div style="margin-top:var(--element-gap);padding:0.8em;background:rgba(192,132,252,0.07);border-radius:8px;border:1px solid rgba(192,132,252,0.2)">
+          <p style="font-size:var(--small-size);color:var(--text-muted)">
+            RF correctly discriminates <strong style="color:var(--accent)">98.4%</strong> of fraud vs. legitimate pairs across all decision thresholds.
+          </p>
+        </div>
+        <p style="font-size:var(--small-size);color:var(--text-muted);margin-top:var(--element-gap)">
+          Even LR's AUC 0.9618 confirms linear separability exists — validates ensemble methods for full pattern capture.
+        </p>
+      </div>
+    </div>
+  </div>
+  <span class="slide-num">09 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 10 — CONFUSION MATRICES
+══════════════════════════════════════════════ -->
+<section class="slide" id="s10">
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">Confusion Matrices</h2>
+
+    <div data-animate style="transition-delay:0.15s;margin-top:var(--element-gap)">
+      <img src="results/figures/confusion_matrices_combined.png" alt="Confusion Matrices" class="fig" style="max-height:min(52vh,460px)">
+    </div>
+
+    <div class="grid-3 stagger" style="margin-top:var(--element-gap)">
+      <div class="card" data-animate style="border-top:3px solid var(--accent3)">
+        <p style="font-size:var(--small-size);font-weight:600;color:var(--accent3);margin-bottom:0.3em;display:flex;align-items:center;gap:0.4em">
+          <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-chart"/></svg>
+          Logistic Regression
+        </p>
+        <p style="font-size:var(--small-size);color:var(--text-muted)">Caught: <strong>83</strong> fraud · False alarms: <strong style="color:var(--danger)">1,461</strong></p>
+        <p style="font-size:var(--small-size);color:var(--text-muted);margin-top:0.3em">Precision 5.4% — unusable in production</p>
+      </div>
+      <div class="card card-glow" data-animate style="border-top:3px solid var(--accent)">
+        <p style="font-size:var(--small-size);font-weight:600;color:var(--accent);margin-bottom:0.3em;display:flex;align-items:center;gap:0.4em">
+          <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-crown"/></svg>
+          Random Forest
+        </p>
+        <p style="font-size:var(--small-size);color:var(--text-muted)">Caught: <strong style="color:var(--success)">73</strong> fraud · False alarms: <strong style="color:var(--success)">14</strong></p>
+        <p style="font-size:var(--small-size);color:var(--text-muted);margin-top:0.3em">Only 14 cards wrongly frozen — best balance</p>
+      </div>
+      <div class="card" data-animate style="border-top:3px solid var(--accent2)">
+        <p style="font-size:var(--small-size);font-weight:600;color:var(--accent2);margin-bottom:0.3em;display:flex;align-items:center;gap:0.4em">
+          <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-tree"/></svg>
+          XGBoost
+        </p>
+        <p style="font-size:var(--small-size);color:var(--text-muted)">Caught: <strong>78</strong> fraud · False alarms: <strong style="color:var(--warning)">57</strong></p>
+        <p style="font-size:var(--small-size);color:var(--text-muted);margin-top:0.3em">More fraud caught, more false alarms</p>
+      </div>
+    </div>
+  </div>
+  <span class="slide-num">10 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 11 — FEATURE IMPORTANCE
+══════════════════════════════════════════════ -->
+<section class="slide" id="s11">
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">Feature Importance</h2>
+
+    <div class="feat-layout" style="margin-top:var(--content-gap)">
+      <div data-animate style="transition-delay:0.15s">
+        <img src="results/figures/feature_importance_comparison.png" alt="Feature Importance" class="fig">
+      </div>
+      <div data-animate style="transition-delay:0.25s">
+        <p style="font-size:var(--small-size);color:var(--accent);font-weight:600;margin-bottom:0.6em;display:flex;align-items:center;gap:0.4em">
+          <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-target"/></svg>
+          Top Fraud Indicators (XGBoost)
+        </p>
+        <div>
+          <div class="feat-row">
+            <span class="feat-name">V14</span>
+            <div class="feat-track"><div class="feat-fill" style="width:44.7%"></div></div>
+            <span class="feat-pct">44.7%</span>
+          </div>
+          <div class="feat-row">
+            <span class="feat-name">V10</span>
+            <div class="feat-track"><div class="feat-fill" style="width:18%;background:linear-gradient(90deg,var(--accent2),var(--accent4))"></div></div>
+            <span class="feat-pct">~18%</span>
+          </div>
+          <div class="feat-row">
+            <span class="feat-name">V12</span>
+            <div class="feat-track"><div class="feat-fill" style="width:14%;background:linear-gradient(90deg,var(--accent2),var(--accent4))"></div></div>
+            <span class="feat-pct">~14%</span>
+          </div>
+          <div class="feat-row">
+            <span class="feat-name">V4</span>
+            <div class="feat-track"><div class="feat-fill" style="width:10%;background:linear-gradient(90deg,var(--accent3),var(--warning))"></div></div>
+            <span class="feat-pct">~10%</span>
+          </div>
+          <div class="feat-row">
+            <span class="feat-name">V17</span>
+            <div class="feat-track"><div class="feat-fill" style="width:7%;background:linear-gradient(90deg,var(--accent3),var(--warning))"></div></div>
+            <span class="feat-pct">~7%</span>
+          </div>
+        </div>
+        <div style="margin-top:var(--element-gap);padding:0.8em;background:rgba(192,132,252,0.07);border-radius:8px;border:1px solid rgba(192,132,252,0.2)">
+          <p style="font-size:var(--small-size);color:var(--accent);font-weight:600;display:flex;align-items:center;gap:0.4em">
+            <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-sparkle"/></svg>
+            Key Insight
+          </p>
+          <p style="font-size:var(--small-size);color:var(--text-muted);margin-top:0.3em">
+            Both RF and XGBoost independently rank <strong style="color:var(--accent)">V14</strong> as #1. Cross-model agreement validates it as a genuine fraud signal, not noise.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <span class="slide-num">11 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 12 — BEST MODEL
+══════════════════════════════════════════════ -->
+<section class="slide" id="s12">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="slide-content">
+    <div style="display:flex;align-items:center;gap:0.8em;margin-bottom:var(--element-gap)" data-animate>
+      <div class="accent-bar" style="margin:0"></div>
+      <span class="winner-crown">
+        <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-crown"/></svg>
+        Recommended Model
+      </span>
+    </div>
+    <h2 data-animate style="transition-delay:0.05s">Random Forest</h2>
+
+    <div class="win-layout">
+      <div data-animate style="transition-delay:0.15s">
+        <div class="metric-grid">
+          <div class="metric-card">
+            <span class="val">0.8022</span>
+            <span class="lbl">F1-Score</span>
+          </div>
+          <div class="metric-card">
+            <span class="val">0.9842</span>
+            <span class="lbl">ROC-AUC</span>
+          </div>
+          <div class="metric-card">
+            <span class="val" style="color:var(--success)">83.9%</span>
+            <span class="lbl">Precision</span>
+          </div>
+          <div class="metric-card">
+            <span class="val" style="color:var(--accent2)">76.8%</span>
+            <span class="lbl">Recall</span>
+          </div>
+        </div>
+        <div style="margin-top:var(--element-gap);padding:0.8em;background:rgba(192,132,252,0.07);border-radius:8px;border:1px solid rgba(192,132,252,0.2)">
+          <p style="font-size:var(--small-size);color:var(--text-muted)">
+            <code>n_estimators=200</code> · <code>max_depth=20</code> · balanced class weights · trained on SMOTE data
+          </p>
+        </div>
+      </div>
+
+      <div data-animate style="transition-delay:0.25s">
+        <p style="font-size:var(--small-size);color:var(--accent);font-weight:600;margin-bottom:0.6em;display:flex;align-items:center;gap:0.4em">
+          <svg class="icon-svg" style="width:0.9em;height:0.9em"><use href="#ico-target"/></svg>
+          Test Set Performance (95 fraud cases)
+        </p>
+        <div>
+          <div class="cm-row tp">
+            <span class="label">True Positives — fraud caught</span>
+            <span class="count">73</span>
+          </div>
+          <div class="cm-row fp">
+            <span class="label">False Positives — cards wrongly frozen</span>
+            <span class="count">14</span>
+          </div>
+          <div class="cm-row fn">
+            <span class="label">False Negatives — fraud missed</span>
+            <span class="count">22</span>
+          </div>
+        </div>
+        <div style="margin-top:var(--element-gap)">
+          <ul class="bullet-list">
+            <li>Best precision + recall trade-off for production</li>
+            <li>14 false alarms vs. 1,461 for Logistic Regression</li>
+            <li><strong>Recommended for production deployment</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <span class="slide-num">12 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 13 — LIMITATIONS & FUTURE WORK
+══════════════════════════════════════════════ -->
+<section class="slide" id="s13">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">Limitations &amp; Future Work</h2>
+
+    <div class="lim-layout">
+      <div data-animate style="transition-delay:0.15s">
+        <p class="lim-section-label" style="color:var(--danger)">
+          <svg class="icon-svg" style="width:0.9em;height:0.9em;margin-right:0.3em;vertical-align:middle"><use href="#ico-warning"/></svg>
+          Current Limitations
+        </p>
+        <div class="lim-card" style="border-top:3px solid var(--danger)">
+          <ul class="bullet-list">
+            <li><strong>2013 dataset</strong> — modern fraud patterns differ; model may not generalise to card-not-present or contactless fraud</li>
+            <li><strong>Opaque features</strong> — V1–V28 are PCA-transformed; can't derive actionable business rules from model weights</li>
+            <li><strong>Static model</strong> — no online learning; fraud rings evolve and cause concept drift over months</li>
+            <li><strong>Threshold fixed</strong> — default 0.5 probability threshold; business cost ratio (false positive vs. false negative) not tuned</li>
+            <li><strong>No temporal validation</strong> — random 80/20 split; time-based split would be more realistic</li>
+          </ul>
+        </div>
+      </div>
+
+      <div data-animate style="transition-delay:0.3s">
+        <p class="lim-section-label" style="color:var(--accent)">
+          <svg class="icon-svg" style="width:0.9em;height:0.9em;margin-right:0.3em;vertical-align:middle"><use href="#ico-rocket"/></svg>
+          Future Directions
+        </p>
+        <div class="lim-card" style="border-top:3px solid var(--accent)">
+          <ul class="bullet-list">
+            <li><strong>Deep learning</strong> — LSTM / Transformer on raw transaction sequences to capture temporal spending behaviour</li>
+            <li><strong>Cost-sensitive threshold</strong> — tune the classification threshold using real bank cost ratios for missed fraud vs. frozen cards</li>
+            <li><strong>SHAP explainability</strong> — provide auditable explanations per-decision for regulatory compliance (EU AI Act)</li>
+            <li><strong>Online learning</strong> — incremental updates to adapt to new fraud patterns without full retraining</li>
+            <li><strong>Graph neural networks</strong> — model merchant/card relationships for ring-fraud detection</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <span class="slide-num">13 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 14 — CONCLUSIONS
+══════════════════════════════════════════════ -->
+<section class="slide" id="s14">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="slide-content">
+    <div class="accent-bar" data-animate></div>
+    <h2 data-animate style="transition-delay:0.05s">Conclusions</h2>
+
+    <div class="conc-grid stagger" style="margin-top:var(--element-gap)">
+      <div class="conc-card" data-animate>
+        <div class="conc-num">01</div>
+        <div class="conc-title">Ensemble Methods Win</div>
+        <div class="conc-body">Random Forest F1 = 0.8022 vs. Logistic Regression F1 = 0.1015. Ensemble captures complex non-linear fraud patterns that linear models miss.</div>
+      </div>
+      <div class="conc-card" data-animate>
+        <div class="conc-num">02</div>
+        <div class="conc-title">Random Forest → Production</div>
+        <div class="conc-body">Best precision (83.9%) + strong recall (76.8%). Only 14 false alarms protects customer experience. Recommended for deployment.</div>
+      </div>
+      <div class="conc-card" data-animate>
+        <div class="conc-num">03</div>
+        <div class="conc-title">XGBoost → Max Recall</div>
+        <div class="conc-body">Catches more fraud (82.1% recall) but 57 false alarms. Choose when missing fraud is more costly than customer inconvenience.</div>
+      </div>
+      <div class="conc-card" data-animate>
+        <div class="conc-num">04</div>
+        <div class="conc-title">SMOTE is Essential</div>
+        <div class="conc-body">Applied only to training data. All 3 models achieve &gt;75% recall. Without balancing, models default to predicting "all legitimate".</div>
+      </div>
+    </div>
+
+    <div data-animate style="transition-delay:0.5s;margin-top:var(--element-gap);display:flex;gap:0.6rem;flex-wrap:wrap">
+      <span class="badge badge-teal">
+        <svg class="icon-svg" style="width:0.8em;height:0.8em"><use href="#ico-layers"/></svg>
+        IEEE 5-page paper
+      </span>
+      <span class="badge badge-blue">10 academic references</span>
+      <span class="badge badge-orange">15+ visualisations</span>
+      <span class="badge badge-green">6 project phases</span>
+      <span class="badge badge-purple">
+        <svg class="icon-svg" style="width:0.8em;height:0.8em"><use href="#ico-shield"/></svg>
+        Production-ready model
+      </span>
+    </div>
+  </div>
+  <span class="slide-num">14 / 15</span>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 15 — THANK YOU
+══════════════════════════════════════════════ -->
+<section class="slide" id="s15">
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+  <div class="slide-content" style="align-items:center;text-align:center">
+    <div class="ty-big" data-animate="scale">Thank You</div>
+    <p class="ty-sub" data-animate style="transition-delay:0.2s">Questions &amp; Discussion</p>
+    <div class="links" data-animate style="transition-delay:0.35s">
+      <span class="badge badge-teal">
+        <svg class="icon-svg" style="width:0.8em;height:0.8em"><use href="#ico-shield"/></svg>
+        Credit Card Fraud Detection
+      </span>
+      <span class="badge badge-blue">
+        <svg class="icon-svg" style="width:0.8em;height:0.8em"><use href="#ico-layers"/></svg>
+        Random Forest · XGBoost · Logistic Regression
+      </span>
+    </div>
+    <div style="margin-top:clamp(1.5rem,4vh,3rem);display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;max-width:600px" data-animate style="transition-delay:0.45s">
+      <div class="card stat-block">
+        <span class="stat-num">0.9842</span>
+        <span class="stat-label">Best AUC</span>
+      </div>
+      <div class="card stat-block">
+        <span class="stat-num">0.8022</span>
+        <span class="stat-label">Best F1</span>
+      </div>
+      <div class="card stat-block">
+        <span class="stat-num" style="color:var(--success)">73/95</span>
+        <span class="stat-label">Fraud Detected</span>
+      </div>
+    </div>
+    <p style="margin-top:clamp(1rem,3vh,2rem);font-family:var(--font-mono);font-size:var(--small-size);color:rgba(255,255,255,0.2)" data-animate style="transition-delay:0.55s">
+      Mohamed Attia &nbsp;·&nbsp; Kerim Hariri &nbsp;·&nbsp; Data Mining Project · 2026
+    </p>
+  </div>
+  <span class="slide-num">15 / 15</span>
+</section>
+
+<script>
+// ── Slide names for nav dot tooltips ──
+const SLIDE_NAMES = [
+  'Title', 'Project Overview', 'The Challenge', 'Dataset',
+  'EDA', 'Methodology', 'SMOTE', 'Results Table',
+  'ROC Curves', 'Confusion Matrices', 'Feature Importance',
+  'Best Model', 'Limitations', 'Conclusions', 'Thank You'
+];
+
+// ── Animation Observer ──
+const animObs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('[data-animate]').forEach(el => animObs.observe(el));
+
+// ── Table of Contents links ──
+document.querySelectorAll('[data-goto]').forEach(el => {
+  el.addEventListener('click', (e) => {
+    e.preventDefault();
+    const idx = parseInt(el.dataset.goto);
+    pres.goTo(idx);
+  });
+});
+
+// ── Slide Presentation ──
+class SlidePresentation {
+  constructor() {
+    this.slides = Array.from(document.querySelectorAll('.slide'));
+    this.current = 0;
+    this.locked = false;
+    this.buildDots();
+    this.bindKeys();
+    this.bindTouch();
+    this.bindWheel();
+    this.bindScroll();
+    this.update();
+  }
+
+  goTo(n) {
+    const next = Math.max(0, Math.min(n, this.slides.length - 1));
+    if (next === this.current) return;
+    this.current = next;
+    this.slides[this.current].scrollIntoView({ behavior: 'smooth' });
+    this.update();
+  }
+
+  update() {
+    const pct = ((this.current + 1) / this.slides.length) * 100;
+    document.getElementById('progress').style.width = pct + '%';
+    document.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('active', i === this.current);
+    });
+  }
+
+  buildDots() {
+    const nav = document.getElementById('navDots');
+    this.slides.forEach((_, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'dot-wrap';
+      const label = document.createElement('span');
+      label.className = 'dot-label';
+      label.textContent = SLIDE_NAMES[i] || `Slide ${i + 1}`;
+      const d = document.createElement('div');
+      d.className = 'dot';
+      d.addEventListener('click', () => this.goTo(i));
+      wrap.appendChild(label);
+      wrap.appendChild(d);
+      nav.appendChild(wrap);
+    });
+  }
+
+  bindKeys() {
+    document.addEventListener('keydown', e => {
+      if (['ArrowDown','ArrowRight','PageDown'].includes(e.key)) { e.preventDefault(); this.goTo(this.current + 1); }
+      if (['ArrowUp','ArrowLeft','PageUp'].includes(e.key))  { e.preventDefault(); this.goTo(this.current - 1); }
+      if (e.code === 'Space') { e.preventDefault(); this.goTo(this.current + (e.shiftKey ? -1 : 1)); }
+    });
+  }
+
+  bindTouch() {
+    let startY = 0, startX = 0;
+    document.addEventListener('touchstart', e => {
+      startY = e.touches[0].clientY;
+      startX = e.touches[0].clientX;
+    }, { passive: true });
+    document.addEventListener('touchend', e => {
+      const dy = startY - e.changedTouches[0].clientY;
+      const dx = startX - e.changedTouches[0].clientX;
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50)
+        this.goTo(this.current + (dy > 0 ? 1 : -1));
+    }, { passive: true });
+  }
+
+  bindWheel() {
+    document.addEventListener('wheel', e => {
+      if (this.locked) return;
+      this.locked = true;
+      this.goTo(this.current + (e.deltaY > 0 ? 1 : -1));
+      setTimeout(() => this.locked = false, 900);
+    }, { passive: true });
+  }
+
+  bindScroll() {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          this.current = this.slides.indexOf(entry.target);
+          this.update();
+        }
+      });
+    }, { threshold: 0.6 });
+    this.slides.forEach(s => io.observe(s));
+  }
+}
+
+const pres = new SlidePresentation();
+</script>
+</body>
+</html>
